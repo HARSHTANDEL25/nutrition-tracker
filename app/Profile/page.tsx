@@ -1,65 +1,44 @@
 "use client";
 import { Formik, Field, Form, ErrorMessage } from "formik";
-import { useState } from "react";
 import * as Yup from "yup";
 
 const FIELDS = [
+  { name: "name", label: "Full name", type: "text" },
+  { name: "birthYear", label: "Birth Year", type: "number" },
+  { name: "sex", label: "Sex", type: "select", options: ["MALE", "FEMALE"] },
+  { name: "height", label: "Height", type: "number" },
   {
-    id: 1,
-    name: "About You",
-    data: [
-      { name: "name", label: "Full name", type: "text" },
-      { name: "birthYear", label: "Birth Year", type: "number" },
-      { name: "sex", label: "Sex", type: "select", options: ["MALE", "FEMALE"] },
-    ],
+    name: "heightUnit",
+    label: "Height Unit",
+    type: "select",
+    options: ["CM", "INCH"],
+  },
+  { name: "weight", label: "Weight", type: "number" },
+  {
+    name: "weightUnit",
+    label: "Weight Unit",
+    type: "select",
+    options: ["KG", "LB"],
   },
   {
-    id: 2,
-    name: "Measurements",
-    data: [
-      { name: "height", label: "Height", type: "number" },
-      {
-        name: "heightUnit",
-        label: "Height Unit",
-        type: "select",
-        options: ["CM", "INCH"],
-      },
-      { name: "weight", label: "Weight", type: "number" },
-      {
-        name: "weightUnit",
-        label: "Weight Unit",
-        type: "select",
-        options: ["KG", "LB"],
-      },
-    ],
+    name: "activityLevel",
+    label: "Activity Level",
+    type: "select",
+    options: ["SEDENTARY", "LIGHT", "MODERATE", "ACTIVE", "VERY_ACTIVE"],
   },
   {
-    id: 3,
-    name: "Lifestyle & Goals",
-    data: [
-      {
-        name: "activityLevel",
-        label: "Activity Level",
-        type: "select",
-        options: ["SEDENTARY", "LIGHT", "MODERATE", "ACTIVE", "VERY_ACTIVE"],
-      },
-      {
-        name: "goal",
-        label: "Goal",
-        type: "select",
-        options: ["LOSE", "MAINTAIN", "GAIN"],
-      },
-      {
-        name: "deficitLevel",
-        label: "Deficit Level",
-        type: "select",
-        options: ["LOW", "MEDIUM", "EXTREME"],
-      },
-    ],
+    name: "goal",
+    label: "Goal",
+    type: "select",
+    options: ["LOSE", "MAINTAIN", "GAIN"],
+  },
+  {
+    name: "deficitLevel",
+    label: "Deficit Level",
+    type: "select",
+    options: ["LOW", "MEDIUM", "EXTREME"],
   },
 ];
-
-const multistep = FIELDS.length;
 
 const UserProfileSchema = Yup.object().shape({
   name: Yup.string().min(2, "Too short").required("Required"),
@@ -82,46 +61,17 @@ const UserProfileSchema = Yup.object().shape({
 });
 
 export default function ProfilePage() {
-  const [currentstep, Setcurrentstep] = useState(0);
-  const IsNext = () => {
-    if (currentstep < multistep - 1) {
-      Setcurrentstep(currentstep + 1);
-    }
-  };
-  const IsPrev = () => {
-    if (currentstep > 0) {
-      Setcurrentstep(currentstep - 1);
-    }
-  };
-  const IsSubmit = () => {
-    if (currentstep === multistep - 1) {
-      return true;
-    }
-    return false;
-  };
   return (
     <div className="min-h-screen bg-zinc-50/50 py-12 px-4">
       <div className="max-w-xl mx-auto bg-white rounded-[2.5rem] border border-zinc-200 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
-        {/* Header section */}
         <div className="bg-emerald-500 p-10 text-white relative overflow-hidden">
           <div className="relative z-10">
-            <h1 className="text-3xl font-bold tracking-tight font-outfit text-white">
-              {FIELDS[currentstep].name}
-            </h1>
+            <h1 className="text-3xl font-bold tracking-tight">Your Profile</h1>
             <p className="mt-2 text-emerald-50 opacity-90 text-sm">
-              Step {currentstep + 1} of {multistep} — Personalize your experience
+              Enter your details to calculate precise daily targets
             </p>
           </div>
-          {/* Decorative bubble */}
           <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="h-1.5 w-full bg-zinc-100">
-          <div
-            className="h-full bg-emerald-400 transition-all duration-500 ease-out"
-            style={{ width: `${((currentstep + 1) / multistep) * 100}%` }}
-          ></div>
         </div>
 
         <Formik
@@ -129,79 +79,90 @@ export default function ProfilePage() {
             name: "",
             birthYear: "",
             sex: "MALE",
-            height: "",
+            height: 170,
             heightUnit: "CM",
-            weight: "",
+            weight: 70,
             weightUnit: "KG",
             activityLevel: "MODERATE",
             goal: "MAINTAIN",
             deficitLevel: "MEDIUM",
           }}
           validationSchema={UserProfileSchema}
-          onSubmit={(values, { setSubmitting }) => {
-            console.log(values);
-            setSubmitting(false);
+          onSubmit={(values) => {
+            console.log("Saving to Database...", values);
           }}
         >
           <Form className="p-8 space-y-6">
-            {FIELDS[currentstep].data.map((field, index) => {
+            {FIELDS.map((field, index) => {
+              if (field.name === "weightUnit" || field.name === "heightUnit")
+                return null;
+
+              const isUnitField =
+                field.name === "weight" || field.name === "height";
+
+              // Find the options for the companion unit field
+              const companionUnitName =
+                field.name === "weight" ? "weightUnit" : "heightUnit";
+              const companionField = isUnitField
+                ? FIELDS.find((f) => f.name === companionUnitName)
+                : null;
+
               return (
                 <div key={index} className="space-y-1.5 w-full">
-                  <label
-                    htmlFor={field.name}
-                    className="text-xs font-bold uppercase tracking-wider text-zinc-500 ml-1"
-                  >
+                  <label className="text-xs font-bold uppercase tracking-wider text-zinc-500 ml-1">
                     {field.label}
                   </label>
-                  <Field
-                    type={field.type}
-                    name={field.name}
-                    as={field.options ? "select" : "input"}
-                    placeholder={`Enter your ${field.label.toLowerCase()}`}
-                    className="w-full px-5 py-4 rounded-2xl border border-zinc-200 bg-zinc-50/50 focus:bg-white focus:border-emerald-500 outline-none transition-all placeholder:text-zinc-400 text-zinc-900"
-                  >
-                    {field.options?.map((option, idx) => (
-                      <option key={idx} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </Field>
+
+                  <div className={isUnitField ? "flex gap-3" : "block"}>
+                    <Field
+                      name={field.name}
+                      as={field?.options ? "select" : "input"}
+                      type={field.type}
+                      className="w-full px-5 py-3.5 rounded-2xl border border-zinc-200 bg-zinc-50/50 focus:bg-white focus:border-emerald-500 outline-none transition-all"
+                    >
+                      {field?.options?.map((option: any, idx) => (
+                        <option key={idx} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </Field>
+
+                    {isUnitField && companionField && (
+                      <Field
+                        name={companionField.name}
+                        as="select"
+                        className="w-28 px-4 py-3.5 rounded-2xl border border-zinc-200 bg-zinc-50/50 focus:bg-white focus:border-emerald-500 outline-none transition-all appearance-none cursor-pointer text-center font-semibold"
+                      >
+                        {companionField.options?.map((option: any, idx) => (
+                          <option key={idx} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </Field>
+                    )}
+                  </div>
+
                   <ErrorMessage
                     name={field.name}
                     component="div"
                     className="text-red-500 text-xs ml-1"
                   />
+                  {isUnitField && (
+                    <ErrorMessage
+                      name={companionUnitName}
+                      component="div"
+                      className="text-red-500 text-xs ml-1"
+                    />
+                  )}
                 </div>
               );
             })}
-
-            <div className="flex gap-4 pt-4">
-              {currentstep > 0 && (
-                <button
-                  type="button"
-                  onClick={IsPrev}
-                  className="flex-1 px-6 py-4 rounded-3xl border border-zinc-200 font-bold text-zinc-600 hover:bg-zinc-50 transition-all active:scale-[0.98]"
-                >
-                  Back
-                </button>
-              )}
-              {IsSubmit() ? (
-                <button
-                  type="submit"
-                  className="flex-[2] bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] text-white font-bold py-4 rounded-3xl shadow-lg shadow-emerald-100 transition-all duration-200"
-                >
-                  Complete Profile
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={IsNext}
-                  className="flex-[2] bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] text-white font-bold py-4 rounded-3xl shadow-lg shadow-emerald-100 transition-all duration-200"
-                >
-                  Next Step
-                </button>
-              )}
-            </div>
+            <button
+              type="submit"
+              className="w-full bg-emerald-500 hover:bg-emerald-600 active:scale-[0.98] text-white font-bold py-4 rounded-3xl shadow-lg shadow-emerald-100 transition-all duration-200 cursor-pointer mt-4"
+            >
+              Save & Continue
+            </button>
           </Form>
         </Formik>
       </div>
